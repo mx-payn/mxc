@@ -1,0 +1,11 @@
+.DS_Store
+.idea
+*.log
+tmp/
+
+build/
+
+.vscode
+.cache
+.ccls-cache/
+compile_commands.json
