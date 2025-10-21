@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <format>
 #include <iostream>
+#include <regex>
 
 #include "ansi.h"
 
@@ -22,6 +23,12 @@
 #    define MXC_CLI_FG_DEFAULT
 #endif
 
+static inline void strip_ansi(std::string &str) {
+    // This regex matches ANSI escape sequences, e.g. "\033[31m", "\x1b[1;32H", etc.
+    static const std::regex ansi_pattern(R"(\x1B\[[0-9;]*[A-Za-z])");
+    str = std::regex_replace(str, ansi_pattern, "");
+}
+
 ///////////////////////////////
 ////  LOGGING
 
@@ -30,6 +37,7 @@ typedef enum { TRACE, INFO, WARN, ERROR, OFF } LogLevel;
 class Logger {
    public:
     static inline void set_level(LogLevel level) { s_Level = level; }
+    static inline void set_colored(bool colored) { s_Colored = colored; }
 
     template <typename... Args>
     static inline void trace(const std::format_string<Args...> &fmt, Args &&...args) {
@@ -58,10 +66,13 @@ class Logger {
    private:
     template <typename... Args>
     static inline void log(const std::format_string<Args...> &fmt, Args &&...args) {
-        std::cout << std::format<Args...>(fmt, std::forward<Args>(args)...) << std::endl;
+        std::string msg = std::format<Args...>(fmt, std::forward<Args>(args)...);
+        if (!s_Colored) strip_ansi(msg);
+        std::cout << msg << std::endl;
     }
 
    private:
+    static bool s_Colored;
     static LogLevel s_Level;
 };
 
